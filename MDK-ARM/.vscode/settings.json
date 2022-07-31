@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "my.h": "c",
+        "tube.h": "c",
+        "rda5807m.h": "c",
+        "ir_nec.h": "c",
+        "rotary_encoder.h": "c",
+        "print.h": "c"
+    }
+}
