@@ -66,6 +66,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
     EC11_Decode(EC11_Change_Up, EC11_Change_Down);
   }
+  else if (GPIO_Pin == GPIO_PIN_3)
+  {
+    IR_NEC_Read_Decode(air);
+  }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -89,6 +93,61 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       check_R_D();
   }
 }
+uint32_t tohex(uint8_t *Val)
+{
+  uint32_t zj = 0;
+  for (int i = 0; i < 4; i++)
+  {
+    zj <<= 8;
+    zj |= Val[i];
+  }
+  return zj;
+}
+void IR_Right()
+{
+  int ins = 0;
+  if (MY.function_ins == 0)
+  {
+    MY.function_ins = 1;
+  }
+  else if (MY.function_ins == 1)
+  {
+    MY.function_ins = 2;
+    MY.Freq_ins = 3;
+  }
+  else if (MY.function_ins == 2)
+  {
+    ins = MY.Freq_ins;
+    ins--;
+    if (ins < 0)
+    {
+      ins = 0;
+      MY.function_ins = 0;
+    }
+    MY.Freq_ins = ins;
+  }
+}
+void IR_Left()
+{
+  if (MY.function_ins == 0)
+  {
+    MY.function_ins = 2;
+  }
+  else if (MY.function_ins == 1)
+  {
+    MY.function_ins = 0;
+    MY.Freq_ins = 0;
+  }
+  else if (MY.function_ins == 2)
+  {
+    MY.Freq_ins++;
+    if (MY.Freq_ins > 3)
+    {
+      MY.Freq_ins = 3;
+      MY.function_ins = 1;
+    }
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -98,6 +157,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  uint32_t zj = 0;
+  uint8_t volume_zj = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -124,12 +185,12 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
-  RDA5807M_init();
-  HAL_Delay(500);
-  RDA5807M_Set_Volume(10);
-  HAL_Delay(50);
-  radio_station_Len = RDA5807M_Search_ALL_Freq() - 1;
-  RDA5807M_Set_Freq(10670);
+  // RDA5807M_init();
+  // HAL_Delay(500);
+  // RDA5807M_Set_Volume(2);
+  // HAL_Delay(50);
+  // radio_station_Len = RDA5807M_Search_ALL_Freq() - 1;
+  // RDA5807M_Set_Freq(10670);
 
   Key_SW = 1;
   AMP_EN(1);
@@ -145,8 +206,40 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // printf("%d", RDA5807M_Radio_Instructions());
-    // printf("%d\r\n", ia);
+    if (IR_NEC_Read_OK)
+    {
+
+      zj = tohex(IR_NEC_Read_Dat);
+      if (zj == 0x00FF5AA5) //右
+        IR_Right();
+      else if (zj == 0x00FF10EF) //左
+        IR_Left();
+      else if (zj == 0x00FF18E7) //上
+        EC11_Change_Up();
+      else if (zj == 0x00FF4AB5) //下
+        EC11_Change_Down();
+      else if (zj == 0x00FF38C7) // OK
+        DETERMINE();
+      else if (zj == 0x00FF6897) //功放
+        AMP_Change();
+      else if (zj == 0x00FF6897) //功放
+        AMP_Change();
+      else if (zj == 0x00FFB04F)
+      {
+
+        if (MY.volume == 0)
+          MY.volume = volume_zj;
+        else
+        {
+          MY.volume = 0;
+          volume_zj = MY.volume;
+        }
+        DETERMINE();
+      }
+      printf("%08X\r\n", zj);
+      HAL_Delay(100);
+      IR_NEC_Read_OK = 0;
+    }
   }
   /* USER CODE END 3 */
 }
