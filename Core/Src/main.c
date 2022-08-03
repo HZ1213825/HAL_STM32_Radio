@@ -185,12 +185,12 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
-  // RDA5807M_init();
-  // HAL_Delay(500);
-  // RDA5807M_Set_Volume(2);
-  // HAL_Delay(50);
-  // radio_station_Len = RDA5807M_Search_ALL_Freq() - 1;
-  // RDA5807M_Set_Freq(10670);
+  RDA5807M_init();
+  HAL_Delay(500);
+  RDA5807M_Set_Volume(2);
+  HAL_Delay(50);
+  radio_station_Len = RDA5807M_Search_ALL_Freq() - 1;
+  RDA5807M_Set_Freq(10670);
 
   Key_SW = 1;
   AMP_EN(1);
